@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>燃煤替代效益计算器</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .calculator { border: 1px solid #ccc; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .input-group { margin: 10px 0; }
+        input[type="number"] { width: 120px; padding: 5px; }
+        button { background: #4CAF50; color: white; border: none; padding: 8px 15px; cursor: pointer; }
+        .result { color: #d32f2f; font-weight: bold; }
+        .formula { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>燃煤替代效益计算器</h1>
+
+    <!-- 年替煤量计算 -->
+    <div class="calculator">
+        <h2>年替煤量计算</h2>
+        <div class="formula">M = ΣG = G₁ + G₂ + ... + Gₙ</div>
+        <div class="input-group">
+            <label>民用耗煤量（万t/年）: <input type="number" id="civilCoal"></label>
+            <label>工业耗煤量（万t/年）: <input type="number" id="industryCoal"></label>
+        </div>
+        <button onclick="calculateM()">计算</button>
+        <p>年替煤量 M = <span class="result" id="resultM">0</span> 万t/年</p >
+    </div>
+
+    <!-- 二氧化硫减排计算 -->
+    <div class="calculator">
+        <h2>二氧化硫减排计算</h2>
+        <div class="formula">E = 1.6 × M × L</div>
+        <div class="input-group">
+            <label>年替煤量 M（万t/年）: <input type="number" id="inputM"></label>
+            <label>煤含硫量 L（%）: <input type="number" id="sulfurContent" step="0.1"></label>
+        </div>
+        <button onclick="calculateSO2()">计算</button>
+        <p>年减排 SO₂ = <span class="result" id="resultSO2">0</span> 万t/年</p >
+    </div>
+
+    <!-- 飞灰量计算 -->
+    <div class="calculator">
+        <h2>飞灰量计算</h2>
+        <div class="formula">H<sub>f</sub> = 0.11 × M<sub>民用</sub> + 0.055 × M<sub>工业</sub></div>
+        <div class="input-group">
+            <label>民用替煤量（万t/年）: <input type="number" id="civilReplace"></label>
+            <label>工业替煤量（万t/年）: <input type="number" id="industryReplace"></label>
+        </div>
+        <button onclick="calculateFlyAsh()">计算</button>
+        <p>年减少飞灰量 = <span class="result" id="resultFlyAsh">0</span> 万t/年</p >
+    </div>
+
+    <!-- 炉灰量计算 -->
+    <div class="calculator">
+        <h2>炉灰量计算</h2>
+        <div class="formula" id="ashFormula">H₁ = M × (b - h)</div>
+        <div class="input-group">
+            <select id="ashType" onchange="changeAshFormula()">
+                <option value="general">一般燃烧</option>
+                <option value="civil">民用蜂窝煤</option>
+            </select>
+        </div>
+        <div id="generalAshInputs">
+            <div class="input-group">
+                <label>年替煤量 M（万t/年）: <input type="number" id="generalM"></label>
+                <label>煤灰分 b（%）: <input type="number" id="ashContent"></label>
+                <label>飞灰率 h（%）: <input type="number" id="flyAshRate"></label>
+            </div>
+        </div>
+        <div id="civilAshInputs" style="display:none;">
+            <div class="input-group">
+                <label>年替煤量 M（万t/年）: <input type="number" id="civilM"></label>
+                <label>灰量比例 l（%）: <input type="number" id="ashRatio"></label>
+            </div>
+        </div>
+        <button onclick="calculateAsh()">计算</button>
+        <p>年减少炉灰量 = <span class="result" id="resultAsh">0</span> 万t/年</p >
+    </div>
+
+    <!-- 运输量计算 -->
+    <div class="calculator">
+        <h2>运输量计算</h2>
+        <div class="formula">Z = k × (M + H₁)</div>
+        <div class="input-group">
+            <label>年替煤量 M（万t/年）: <input type="number" id="transportM"></label>
+            <label>减少炉灰量 H₁（万t/年）: <input type="number" id="transportH1"></label>
+            <label>运输距离 k（km）: <input type="number" id="distance"></label>
+        </div>
+        <button onclick="calculateTransport()">计算</button>
+        <p>年减少运输量 = <span class="result" id="resultTransport">0</span> 万t·km/年</p >
+    </div>
+
+    <script>
+        // 年替煤量计算
+        function calculateM() {
+            const civil = parseFloat(document.getElementById('civilCoal').value) || 0;
+            const industry = parseFloat(document.getElementById('industryCoal').value) || 0;
+            document.getElementById('resultM').textContent = (civil + industry).toFixed(2);
+        }
+
+        // 二氧化硫减排计算
+        function calculateSO2() {
+            const M = parseFloat(document.getElementById('inputM').value) || 0;
+            const L = parseFloat(document.getElementById('sulfurContent').value) || 0;
+            document.getElementById('resultSO2').textContent = (1.6 * M * L/100).toFixed(4);
+        }
+
+        // 飞灰量计算
+        function calculateFlyAsh() {
+            const civil = parseFloat(document.getElementById('civilReplace').value) || 0;
+            const industry = parseFloat(document.getElementById('industryReplace').value) || 0;
+            document.getElementById('resultFlyAsh').textContent = (0.11*civil + 0.055*industry).toFixed(2);
+        }
+
+        // 炉灰量公式切换
+        function changeAshFormula() {
+            const type = document.getElementById('ashType').value;
+            document.getElementById('generalAshInputs').style.display = type === 'general' ? 'block' : 'none';
+            document.getElementById('civilAshInputs').style.display = type === 'civil' ? 'block' : 'none';
+            document.getElementById('ashFormula').textContent = type === 'general' ? 
+                "H₁ = M × (b - h)" : "H₁ = l × M";
+        }
+
+        // 炉灰量计算
+        function calculateAsh() {
+            const type = document.getElementById('ashType').value;
+            let result;
+            
+            if(type === 'general') {
+                const M = parseFloat(document.getElementById('generalM').value) || 0;
+                const b = parseFloat(document.getElementById('ashContent').value) || 0;
+                const h = parseFloat(document.getElementById('flyAshRate').value) || 0;
+                result = M * (b/100 - h/100);
+            } else {
+                const M = parseFloat(document.getElementById('civilM').value) || 0;
+                const l = parseFloat(document.getElementById('ashRatio').value) || 0;
+                result = M * l/100;
+            }
+            document.getElementById('resultAsh').textContent = result.toFixed(2);
+        }
+
+        // 运输量计算
+        function calculateTransport() {
+            const M = parseFloat(document.getElementById('transportM').value) || 0;
+            const H1 = parseFloat(document.getElementById('transportH1').value) || 0;
+            const k = parseFloat(document.getElementById('distance').value) || 0;
+            document.getElementById('resultTransport').textContent = (k * (M + H1)).toFixed(2);
+        }
+    </script>
+</body>
+</html>
